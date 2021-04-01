@@ -1,10 +1,12 @@
+#define global ctype decRGB(%1) %1>>16 & 0xFF,%1>>8 & 0xFF,%1 & 0xFF
 
 #define global DATA_FOLDER "./data"
 #define global BOX_FONT	"Yu Gothic UI"
 #define global FONT_SIZE	18
 #define global FONT_OPTION 1
 
-#define global _window@
+#define global window _window@
+#define global btnimage _btnimage@
 
 #include "gdi32.as"
 #include "user32.as"
@@ -15,8 +17,26 @@
 
 #include "./module/memo.hsp"
 
-gsel 0,1
+	gsel 0,1
 
+	// ボタン画像のロード
+	btnimage = ginfo_newid
+	buffer btnimage,32*2,32*3*4
+	color 0:boxf
+	pos 32,32*3*0:picload "./image/add.gif",1
+	pos 32,32*3*1:picload "./image/pin.gif",1
+	pos 32,32*3*2:picload "./image/col.gif",1
+	pos 32,32*3*3:picload "./image/del.gif",1
+	gmode 0,32,32
+	repeat 4
+		y = cnt*32*3
+		repeat 2,1
+			pos 32,cnt*32+y
+			gcopy btnimage,32,y,32,32
+		loop
+	loop
+
+	// 初期化
 	dimtype window,vartype("struct")	// ウィンドウ
 
 	// データがあれば読み込み or 初期ウィンドウの生成
@@ -33,8 +53,7 @@ gsel 0,1
 	// ファイルのリスト
 	dirlist list,DATA_FOLDER+"/*.memo",1
 	if stat == 0{
-		fname = DATA_FOLDER+"/temp.memo"
-		newmod window,modMemo,fname,0,0,200,200,"white",""
+		newmod window,modMemo,""
 	}else{
 		notesel list
 		repeat stat
@@ -49,20 +68,7 @@ gsel 0,1
 
 // ファイルを読み込んでウィンドウを生成（グローバルじゃないとnewmodでエラー）
 #deffunc loadMemo str _fname
-	notesel notedata
-	noteload _fname
-	memo = ""
-	noteget temp,0
-	split temp,",",x,y,w,h,col
-	repeat noteinfo(0)-1,1
-		noteget temp,cnt
-		if cnt != 1:memo += "\n"
-		memo += temp
-	loop
-
-	newmod window,modMemo,_fname,int(x),int(y),int(w),int(h),col,memo
-
-	noteunsel
+	newmod window,modMemo,_fname
 	return
 
 // ウィンドウ数が変わった
