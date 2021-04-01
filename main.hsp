@@ -1,0 +1,74 @@
+
+#define global DATA_FOLDER "./data"
+#define global BOX_FONT	"Yu Gothic UI"
+#define global FONT_SIZE	18
+#define global FONT_OPTION 1
+
+#define global _window@
+
+#include "gdi32.as"
+#include "user32.as"
+#include "obj.as"
+
+#include "./module/lib.hsp"
+#include "./module/trayicon.hsp"
+
+#include "./module/memo.hsp"
+
+gsel 0,1
+
+	dimtype window,vartype("struct")	// ウィンドウ
+
+	// データがあれば読み込み or 初期ウィンドウの生成
+	gosub *loadData
+	
+	stop
+
+// データの読み込みを行う
+*loadData
+	// ディレクトリが無ければ作成する。
+	dirlist temp,DATA_FOLDER,5
+	if stat == 0:mkdir DATA_FOLDER
+
+	// ファイルのリスト
+	dirlist list,DATA_FOLDER+"/*.memo",1
+	if stat == 0{
+		fname = DATA_FOLDER+"/temp.memo"
+		newmod window,modMemo,fname,0,0,200,200,"white",""
+	}else{
+		notesel list
+		repeat stat
+			notesel list
+			noteget fname,cnt
+			loadMemo DATA_FOLDER+"/"+fname	// ウィンドウの生成
+		loop
+		noteunsel
+	}
+	
+	return
+
+// ファイルを読み込んでウィンドウを生成（グローバルじゃないとnewmodでエラー）
+#deffunc loadMemo str _fname
+	notesel notedata
+	noteload _fname
+	memo = ""
+	noteget temp,0
+	split temp,",",x,y,w,h,col
+	repeat noteinfo(0)-1,1
+		noteget temp,cnt
+		if cnt != 1:memo += "\n"
+		memo += temp
+	loop
+
+	newmod window,modMemo,_fname,int(x),int(y),int(w),int(h),col,memo
+
+	noteunsel
+	return
+
+// ウィンドウ数が変わった
+*onChangeWindowNum
+	return
+
+// タスクトレイのアイコンがクリックされた。
+*onTrayIconEvent 
+	return

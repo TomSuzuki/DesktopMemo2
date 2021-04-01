@@ -1,0 +1,151 @@
+
+// メモのウィンドウを制御するためのモジュールです。
+
+#module modMemo fname,x,y,w,h,col,memo,wid,hMesbox,boxid,hBrush
+#uselib "user32"
+#cfunc GetWindowLong "GetWindowLongA" int, int
+#func SetWindowLong "SetWindowLongA" int, int, int
+#define GWL_STYLE	$FFFFFFF0
+#define GWL_EXSTYLE -20
+#define WS_EX_TOOLWINDOW	0x0080
+
+#define margin 3
+#define default_w 256
+#define default_h 192
+#define max_w 500
+#define max_h 500
+
+#modinit str _fname,int _x,int _y,int _w,int _h,str _col,str _memo
+	// 初期化
+	x = _x
+	y = _y
+	w = _w
+	h = _h
+	col = _col
+	memo = _memo
+	fname = _fname
+	wid = ginfo_newid
+
+	// 最低値
+	if w < default_w:w = default_w
+	if h < default_h:h = default_h
+	if w > max_w:w = max_w
+	if h > max_h:h = max_h
+
+	// ウィンドウの生成
+	bgscr wid,ginfo(20),ginfo(21),2,x,y
+	width w,h
+
+	// 背景色など
+	color:boxf
+
+	// コマンドの登録
+	title "desktop memo"
+	SetWindowLong hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_TOOLWINDOW
+	oncmd gosub *onWindowClick@,0x0201
+	oncmd gosub *onWindowResize@,0x00005
+	oncmd gosub *ctrlEdit@, 0x133
+
+	// メッセージボックスの登録
+	objmode 2,0
+	font BOX_FONT,FONT_SIZE,FONT_OPTION
+	pos margin,32+margin
+	mesbox memo,ginfo_winx-2*margin,ginfo_winy-32-2*margin,1,0xFFFFFF
+	boxid = stat
+	hMesbox = objinfo(stat,2)
+	ShowScrollBar hMesbox,3,0
+	SetWindowLong hMesbox,-20,0
+	SetWindowPos hMesbox,0,0,0,0,0,0x27
+	CreateSolidBrush get_WindowBkColor(thismod)
+	hBrush = stat
+
+	// 表示
+	gsel wid,1
+	
+	return
+
+// デストラクタ
+#modterm
+	DeleteObject hBrush
+	return
+
+
+// 情報が更新された（保存を行う）
+#modfunc onChange
+	sel = ginfo_sel
+	gsel wid
+	options = ""
+	options += str(ginfo_wx1) + ","
+	options += str(ginfo_wy1) + ","
+	options += str(ginfo_winx) + ","
+	options += str(ginfo_winy) + ","
+	options += str("") + "\n"
+	temp = options + str(memo)
+	notesel temp
+	notesave fname
+	noteunsel
+	gsel sel
+	return
+
+// ゲッター
+#modcfunc get_WindowTextColor
+	return 0xFFFFFF
+#modcfunc get_WindowBkColor
+	return 0x222222
+#modcfunc get_hMesbox
+	return hMesbox
+#modcfunc get_hBrush
+	return hBrush
+#modcfunc get_wid
+	return wid
+#modcfunc get_boxid
+	return boxid
+	
+#global
+
+// モジュール内に書くとランタイムエラーとかになるので...
+goto *module_memo
+
+// ウィンドウのリサイズ
+*onWindowResize
+	foreach window
+		if ginfo(2) == get_wid(window(cnt)) {
+			gsel ginfo(2),0
+			size = ginfo_winx-2*margin,ginfo_winy-32-2*margin,0,0
+			resizeobj get_boxid(window(cnt)),size,1
+			onChange window(cnt)
+			break
+		}
+	loop
+	return
+
+// ウィンドウのクリック
+*onWindowClick
+	foreach window
+		if ginfo(2) == get_wid(window(cnt)) {
+			gsel ginfo(2),0
+			sendmsg hwnd,0x00A1,2,0
+			onChange window(cnt)
+			break
+		}
+	loop
+	return
+
+// エディットコントロールの処理（主に色のための処理）
+*ctrlEdit
+	hBrush = 0
+	foreach window
+		if get_hMesbox(window(cnt)) == lparam {
+			textColor = get_WindowTextColor(window(cnt))
+			bkColor   = get_WindowBkColor(window(cnt))
+			hBrush    = get_hBrush(window(cnt))
+			SetTextColor wparam, textColor
+			SetBkColor wparam, bkColor
+			onChange window(cnt)
+			break
+		}
+	loop
+	return hBrush
+
+
+*module_memo
