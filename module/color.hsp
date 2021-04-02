@@ -12,6 +12,7 @@
 	if s == "red":return 0xFFFFFF
 	if s == "blue":return 0xFFFFFF
 	if s == "green":return 0xFFFFFF
+	if s == "purple":return 0xFFFFFF
 
 	return 0x111111
 
@@ -24,6 +25,7 @@
 	if s == "red":return 0xEA2232
 	if s == "blue":return 0x0088FF
 	if s == "green":return 0x8BB513
+	if s == "purple":return 0x3B2EA0
 	
 	return 0xFFFFFF
 	
@@ -36,6 +38,7 @@
 	if s == "red":return 0xCC0000
 	if s == "blue":return 0x0073D4
 	if s == "green":return 0x6EA605
+	if s == "purple":return 0x241D51
 	
 	return 0xFFFFFF
 

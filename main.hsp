@@ -1,5 +1,7 @@
 #define global ctype decRGB(%1) %1>>16 & 0xFF,%1>>8 & 0xFF,%1 & 0xFF
 #define global ctype hexBGR(%1) ((%1 & 0xFF)<<16 | (%1>>8 & 0xFF)<<8 | (%1>>16 & 0xFF))
+#define global ctype LOWORD(%1) (%1 & $FFFF)
+#define global ctype HIWORD(%1) (%1 >> 16 & $FFFF)
 
 // 設定
 #define global DATA_FOLDER "./data"
@@ -8,12 +10,13 @@
 #define global FONT_OPTION 1
 
 // グローバル変数
-#define global window _window@
-#define global btnimage _btnimage@
+#define global window _window@			// 各メモの情報
+#define global btnimage _btnimage@	// ボタンの親イメージ
+#define global wincol _wincol@			// カラー設定パレット
 
 // メニュー用
 #enum IDM_MEMO = 1
-#enum IDM_SETTING
+#enum IDM_VER
 #enum IDM_EXIT
 
 // WINAPI
@@ -34,6 +37,29 @@
 	// 終了時処理の登録
 	onexit *exit
 
+	// カラーパレットの生成
+	bufcol = ginfo_newid
+	buffer bufcol,64*6,64
+	color decRGB(color_theme("white"))	:boxf 64*0,0,64*0+63,63
+	color decRGB(color_theme("black"))	:boxf 64*1,0,64*1+63,63
+	color decRGB(color_theme("red"))		:boxf 64*2,0,64*2+63,63
+	color decRGB(color_theme("blue"))		:boxf 64*3,0,64*3+63,63
+	color decRGB(color_theme("green"))	:boxf 64*4,0,64*4+63,63
+	color decRGB(color_theme("purple"))	:boxf 64*5,0,64*5+63,63
+	wincol = ginfo_newid
+	bgscr wincol,192,128,8+2
+	title "desktop memo | color pallet"
+	color decRGB(0xCCCCCC):boxf
+	oncmd gosub *eventActivePallet, 0x0006
+	objsize 64,64
+	pos 64*0,64*0:objimage bufcol,64*0,0,64*0,0,64*0,0:button gosub "",*exit
+	pos 64*1,64*0:objimage bufcol,64*1,0,64*1,0,64*1,0:button gosub "",*exit
+	pos 64*2,64*0:objimage bufcol,64*2,0,64*2,0,64*2,0:button gosub "",*exit
+	pos 64*0,64*1:objimage bufcol,64*3,0,64*3,0,64*3,0:button gosub "",*exit
+	pos 64*1,64*1:objimage bufcol,64*4,0,64*4,0,64*4,0:button gosub "",*exit
+	pos 64*2,64*1:objimage bufcol,64*5,0,64*5,0,64*5,0:button gosub "",*exit
+	gsel 0
+
 	// タスクトレイの設定
 	SetTrayIconFile "./image/favicon.ico"
 	CreateTrayIcon "desktop memo",0,0
@@ -42,7 +68,7 @@
 	CreatePopupMenu
 	hMenu.0 = stat
 		AppendMenu hMenu.0, 0, IDM_MEMO, "新しいメモを作成"
-		AppendMenu hMenu.0, 0, IDM_SETTING, "設定"
+		AppendMenu hMenu.0, 0, IDM_VER, "バージョン情報"
 		AppendMenu hMenu.0, $800, 0, ""
 		AppendMenu hMenu.0, 0, IDM_EXIT, "終了"
 
@@ -76,6 +102,15 @@
 	gosub *loadData
 	
 	stop
+
+// カラーパレットを閉じる
+*eventActivePallet
+	if LOWORD(wparam) == 0 {
+		sel = ginfo_sel
+		;gsel wincol,-1
+		gsel sel
+	}
+	return
 
 // データの読み込みを行う
 *loadData
@@ -119,7 +154,8 @@
 		case IDM_MEMO
 			createMemo
 			swbreak
-		case IDM_SETTING
+		case IDM_VER
+			dialog ""
 			swbreak
 		case IDM_EXIT
 			goto *exit
