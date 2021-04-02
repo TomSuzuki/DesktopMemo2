@@ -126,7 +126,6 @@
 	hBrush = stat
 
 	await
-
 	SetWindowPos hMesbox,0,0,0,0,0,0x27
 	sendmsg hMesbox,0x00B9
 	redraw 1
@@ -253,7 +252,9 @@
 	return btnid_del
 #modcfunc get_fname
 	return fname
-
+#modcfunc get_pin
+	return isPin
+	
 #global
 
 // モジュール内に書くとランタイムエラーとかになるので...
@@ -349,7 +350,7 @@ goto *module_memo
 *onWindowClick
 	foreach window
 		if ginfo(2) == get_wid(window(cnt)) {
-			gsel ginfo(2),0
+			gsel ginfo(2),1+get_pin(window(cnt))
 			sendmsg hwnd,0x00A1,2,0
 			onChange window(cnt)
 			break
@@ -361,10 +362,11 @@ goto *module_memo
 *ctrlEdit
 	await 1
 	hBrush = 0
+	asel = ginfo(2)
+	sel = ginfo_sel
 	foreach window
 		if get_hMesbox(window(cnt)) == lparam {
-			sel = ginfo_sel
-			gsel ginfo_intid
+			gsel get_wid(window(cnt)),1+get_pin(window(cnt))
 			textColor = get_WindowTextColor(window(cnt))
 			bkColor   = hexBGR(get_WindowBkColor(window(cnt)))
 			hBrush    = get_hBrush(window(cnt))
@@ -375,6 +377,16 @@ goto *module_memo
 			break
 		}
 	loop
+	if asel != sel{
+		foreach window
+			if get_wid(window(cnt)) == asel {
+				gsel asel
+				objsel get_boxid(window(cnt))
+				break
+			}
+		loop
+	}
+	if asel > 0:gsel asel
 	return hBrush
 
 
