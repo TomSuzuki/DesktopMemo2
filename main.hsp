@@ -1,12 +1,22 @@
 #define global ctype decRGB(%1) %1>>16 & 0xFF,%1>>8 & 0xFF,%1 & 0xFF
 
+// 設定
 #define global DATA_FOLDER "./data"
 #define global BOX_FONT	"Yu Gothic UI"
 #define global FONT_SIZE	18
 #define global FONT_OPTION 1
 
+// グローバル変数
 #define global window _window@
 #define global btnimage _btnimage@
+
+// メニュー用
+#enum IDM_MEMO = 1
+#enum IDM_SETTING
+#enum IDM_EXIT
+
+// WINAPI
+#const global WM_CONTEXTMENU 0x007B
 
 #include "gdi32.as"
 #include "user32.as"
@@ -18,6 +28,21 @@
 #include "./module/memo.hsp"
 
 	gsel 0,1
+
+	// 終了時処理の登録
+	;onexit *exit
+
+	// タスクトレイの設定
+	SetTrayIconFile "./image/favicon.ico"
+	CreateTrayIcon "desktop memo",0,0
+
+	// メニュー
+	CreatePopupMenu
+	hMenu.0 = stat
+		AppendMenu hMenu.0, 0, IDM_MEMO, "新しいメモを作成"
+		AppendMenu hMenu.0, 0, IDM_SETTING, "設定"
+		AppendMenu hMenu.0, $800, 0, ""
+		AppendMenu hMenu.0, 0, IDM_EXIT, "終了"
 
 	// ボタン画像のロード
 	btnimage = ginfo_newid
@@ -53,7 +78,7 @@
 	// ファイルのリスト
 	dirlist list,DATA_FOLDER+"/*.memo",1
 	if stat == 0{
-		newmod window,modMemo,""
+		createMemo
 	}else{
 		notesel list
 		repeat stat
@@ -71,10 +96,32 @@
 	newmod window,modMemo,_fname
 	return
 
-// ウィンドウ数が変わった
-*onChangeWindowNum
+// 新しい空のメモを作成
+#deffunc createMemo
+	loadMemo window,modMemo,""
 	return
 
 // タスクトレイのアイコンがクリックされた。
-*onTrayIconEvent 
+*onTrayIconEvent
+	if lparam == 0x0202 || lparam == 0x0205{
+		TrackPopupMenu hMenu.0, $100, ginfo(0), ginfo(1), 0, hwnd, 0
+		if stat = 0:return
+		switch stat
+		case IDM_MEMO
+			createMemo
+			swbreak
+		case IDM_SETTING
+			swbreak
+		case IDM_EXIT
+			sendmsg hwnd,0x000000
+			;goto *exit
+			end
+		swend
+	}
 	return
+
+
+// 終了時処理
+*exit
+	DestroyMenu hMenu.0
+	end
