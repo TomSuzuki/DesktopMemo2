@@ -1,4 +1,5 @@
 #define global ctype decRGB(%1) %1>>16 & 0xFF,%1>>8 & 0xFF,%1 & 0xFF
+#define global ctype hexBGR(%1) ((%1 & 0xFF)<<16 | (%1>>8 & 0xFF)<<8 | (%1>>16 & 0xFF))
 
 // İ’è
 #define global DATA_FOLDER "./data"
@@ -25,6 +26,7 @@
 #include "./module/lib.hsp"
 #include "./module/trayicon.hsp"
 
+#include "./module/color.hsp"
 #include "./module/memo.hsp"
 
 	gsel 0,-1
@@ -125,7 +127,6 @@
 		swend
 	}
 	return
-
 
 // I—¹ˆ—
 *exit

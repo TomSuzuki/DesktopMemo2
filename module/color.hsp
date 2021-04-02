@@ -1,0 +1,42 @@
+
+// 色の設定
+
+#module
+
+// テキストカラー
+#defcfunc color_text str p1
+	s = getpath(p1,16)
+	
+	if s == "white":return 0x111111
+	if s == "black":return 0xFFFFFF
+	if s == "red":return 0xFFFFFF
+	if s == "blue":return 0xFFFFFF
+	if s == "green":return 0xFFFFFF
+
+	return 0x111111
+
+// テーマカラー
+#defcfunc color_theme str p1
+	s = getpath(p1,16)
+
+	if s == "white":return 0xFFFFFF
+	if s == "black":return 0x000000
+	if s == "red":return 0xEA2232
+	if s == "blue":return 0x0088FF
+	if s == "green":return 0x8BB513
+	
+	return 0xFFFFFF
+	
+// 背景カラー（BOX内カラー）
+#defcfunc color_background str p1
+	s = getpath(p1,16)
+
+	if s == "white":return 0xECECEC
+	if s == "black":return 0x222222
+	if s == "red":return 0xCC0000
+	if s == "blue":return 0x0073D4
+	if s == "green":return 0x6EA605
+	
+	return 0xFFFFFF
+
+#global
