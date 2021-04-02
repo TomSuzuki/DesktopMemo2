@@ -118,8 +118,10 @@
 	return
 
 // デストラクタ
+#modfunc _exit_ onexit
 #modterm
 	DeleteObject hBrush
+	buffer wid,1,1,2
 	return
 
 

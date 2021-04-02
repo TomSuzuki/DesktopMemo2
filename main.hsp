@@ -27,10 +27,10 @@
 
 #include "./module/memo.hsp"
 
-	gsel 0,1
+	gsel 0,-1
 
 	// 終了時処理の登録
-	;onexit *exit
+	onexit *exit
 
 	// タスクトレイの設定
 	SetTrayIconFile "./image/favicon.ico"
@@ -98,12 +98,13 @@
 
 // 新しい空のメモを作成
 #deffunc createMemo
-	loadMemo window,modMemo,""
+	loadMemo ""
 	return
 
 // タスクトレイのアイコンがクリックされた。
 *onTrayIconEvent
 	if lparam == 0x0202 || lparam == 0x0205{
+		gsel 0
 		TrackPopupMenu hMenu.0, $100, ginfo(0), ginfo(1), 0, hwnd, 0
 		if stat = 0:return
 		switch stat
@@ -113,8 +114,7 @@
 		case IDM_SETTING
 			swbreak
 		case IDM_EXIT
-			sendmsg hwnd,0x000000
-			;goto *exit
+			goto *exit
 			end
 		swend
 	}
@@ -123,5 +123,9 @@
 
 // 終了時処理
 *exit
+	gsel 0,1
+	foreach window
+		delmod window(cnt)
+	loop
 	DestroyMenu hMenu.0
 	end
