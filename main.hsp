@@ -8,6 +8,7 @@
 #define global BOX_FONT	"Yu Gothic UI"
 #define global FONT_SIZE	18
 #define global FONT_OPTION 1
+#define global MEG_VER "version 0.01\ndesktop memo\n(c)tomsuzuki 2021-" 
 
 // グローバル変数
 #define global window _window@			// 各メモの情報
@@ -156,7 +157,7 @@
 			createMemo
 			swbreak
 		case IDM_VER
-			dialog ""
+			dialog MEG_VER,0
 			swbreak
 		case IDM_EXIT
 			goto *exit
