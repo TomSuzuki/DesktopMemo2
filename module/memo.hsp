@@ -68,9 +68,7 @@
 
 	// 色の設定
 	if col == "":col = "black"
-	col_theme = color_theme(col)
-	col_text  = color_text(col)
-	col_bk    = color_background(col)
+	colorsetting thismod
 
 	// コマンドの登録
 	title "desktop memo"
@@ -78,21 +76,8 @@
 	oncmd gosub *onWindowClick@,0x0201
 	oncmd gosub *onWindowResize@,0x00005
 
-	// 背景色など
-	color decRGB(get_WindowColor(thismod)):boxf
-
 	// メッセージボックスの登録
-	objmode 2,0
-	font BOX_FONT,FONT_SIZE,FONT_OPTION
-	pos margin,32+margin
-	mesbox memo,ginfo_winx-2*margin,ginfo_winy-32-2*margin,1,get_WindowBkColor(thismod)
-	boxid = stat
-	hMesbox = objinfo(stat,2)
-	ShowScrollBar hMesbox,3,0
-	SetWindowLong hMesbox,-20,0
-	SetWindowPos hMesbox,0,0,0,0,0,0x27
-	CreateSolidBrush hexBGR(get_WindowBkColor(thismod))
-	hBrush = stat
+	setMesbox thismod
 
 	// ボタンイメージの生成
 	createButtonImage thismod
@@ -102,8 +87,6 @@
 
 	// 表示
 	gsel wid
-
-	// エディットコントロールの処理を登録
 	oncmd gosub *ctrlEdit@, 0x133
 	
 	return
@@ -115,8 +98,48 @@
 	buffer wid,1,1,2
 	return
 
+// メッセージボックスの登録
+#modfunc setMesbox
+	sel = ginfo_sel
+	gsel wid
+
+	// ブラシの初期化
+	if hBrush != 0{
+		DeleteObject hBrush
+	}
+
+	// 背景色など
+	gsel wid
+	color decRGB(get_WindowColor(thismod)):boxf
+
+	// boxの設置
+	objmode 2,0
+	font BOX_FONT,FONT_SIZE,FONT_OPTION
+	pos margin,32+margin
+	mesbox memo,ginfo_winx-2*margin,ginfo_winy-32-2*margin,1,get_WindowBkColor(thismod)
+	boxid = stat
+	hMesbox = objinfo(stat,2)
+	ShowScrollBar hMesbox,3,0
+	SetWindowLong hMesbox,-20,0x0
+	SetWindowPos hMesbox,0,0,0,0,0,0x27
+	CreateSolidBrush hexBGR(get_WindowBkColor(thismod))
+	hBrush = stat
+
+	await
+
+	SetWindowPos hMesbox,0,0,0,0,0,0x27
+	sendmsg hMesbox,0x00B9
+	redraw 1
+	objsel boxid
+
+	gsel sel
+	return
+
 // ボタンの設置、更新
 #modfunc setButton
+	sel = ginfo_sel
+
+	// ボタン
 	gsel wid
 	objsize 32,32
 	if btnid_add != 0:clrobj btnid_add
@@ -125,8 +148,11 @@
 	if btnid_del != 0:clrobj btnid_del
 	y = 32*3*0:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*0,0:button gosub "",*newWindow@:btnid_add = stat
 	y = 32*3*1:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*1,0:button gosub "",*onClickWindowPin@:btnid_pin = stat
-	y = 32*3*2:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*2,0:button gosub "",*newWindow@:btnid_col = stat
+	y = 32*3*2:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*2,0:button gosub "",*showColorPallet@:btnid_col = stat
 	y = 32*3*3:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos ginfo_winx-32,0:button gosub "",*delWindow@:btnid_del = stat
+
+	gsel sel
+	
 	return
 
 // ピンのトグル
@@ -173,6 +199,37 @@
 	gsel sel
 	return
 
+// テーマカラーの値を設定する
+#modfunc colorsetting
+	col_theme = color_theme(col)
+	col_text  = color_text(col)
+	col_bk    = color_background(col)
+	return
+
+// テーマカラーの変更
+#modfunc set_themecolor str _col
+	// 色
+	col = _col
+	colorsetting thismod
+
+	// 保存
+	onChange thismod
+
+	// 初期化
+	sel = ginfo_sel
+	gsel wid
+	clrobj
+
+	// エディットコントロール
+	setMesbox thismod
+	
+	// ボタンの更新
+	createButtonImage thismod
+	setButton thismod
+	
+	gsel sel
+	return
+
 // ゲッター
 #modcfunc get_WindowColor
 	return col_theme
@@ -196,11 +253,58 @@
 	return btnid_del
 #modcfunc get_fname
 	return fname
-	
+
 #global
 
 // モジュール内に書くとランタイムエラーとかになるので...
 goto *module_memo
+
+// ダミー
+*dummy
+	return
+
+// テーマカラーを変更する
+*changeTheme
+	s = stat
+	
+	// ウィンドウ閉じる
+	sel = ginfo_sel
+	gsel wincol,-1
+	gsel sel
+
+	// 色
+	col = ""
+	if stat == btn_col_white:col = "white"
+	if stat == btn_col_black:col = "black"
+	if stat == btn_col_red:col = "red"
+	if stat == btn_col_blue:col = "blue"
+	if stat == btn_col_green:col = "green"
+	if stat == btn_col_purple:col = "purple"
+	if col == "":return
+
+	// テーマカラーの変更
+	foreach window
+		if selectwin == get_wid(window(cnt)){
+			set_themecolor window(cnt),col
+			break
+		}
+	loop
+
+	return
+
+// カラーパレットを出現させる
+*showColorPallet
+	if ginfo(2) == -1:return
+	sel = ginfo_sel
+	gsel ginfo(2)
+	selectwin = ginfo_sel
+	x = ginfo_wx1+12
+	y = ginfo_wy1+32
+	gsel wincol
+	width ginfo_winx,ginfo_winy,x,y
+	gsel wincol,2
+	gsel sel
+	return
 
 // ピンをクリック
 *onClickWindowPin
@@ -255,22 +359,22 @@ goto *module_memo
 
 // エディットコントロールの処理（主に色のための処理）
 *ctrlEdit
-	sel = ginfo_sel
 	await 1
 	hBrush = 0
-	if ginfo(2) != -1:gsel ginfo(2)
 	foreach window
 		if get_hMesbox(window(cnt)) == lparam {
+			sel = ginfo_sel
+			gsel ginfo_intid
 			textColor = get_WindowTextColor(window(cnt))
 			bkColor   = hexBGR(get_WindowBkColor(window(cnt)))
 			hBrush    = get_hBrush(window(cnt))
 			SetTextColor wparam, textColor
 			SetBkColor wparam, bkColor
 			onChange window(cnt)
+			gsel sel
 			break
 		}
 	loop
-	if sel != -1:gsel sel
 	return hBrush
 
 

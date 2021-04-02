@@ -13,6 +13,7 @@
 #define global window _window@			// 各メモの情報
 #define global btnimage _btnimage@	// ボタンの親イメージ
 #define global wincol _wincol@			// カラー設定パレット
+#define global selectwin _selectwin@// 選択中のウィンドウ（カラー設定用）
 
 // メニュー用
 #enum IDM_MEMO = 1
@@ -52,12 +53,12 @@
 	color decRGB(0xCCCCCC):boxf
 	oncmd gosub *eventActivePallet, 0x0006
 	objsize 64,64
-	pos 64*0,64*0:objimage bufcol,64*0,0,64*0,0,64*0,0:button gosub "",*exit
-	pos 64*1,64*0:objimage bufcol,64*1,0,64*1,0,64*1,0:button gosub "",*exit
-	pos 64*2,64*0:objimage bufcol,64*2,0,64*2,0,64*2,0:button gosub "",*exit
-	pos 64*0,64*1:objimage bufcol,64*3,0,64*3,0,64*3,0:button gosub "",*exit
-	pos 64*1,64*1:objimage bufcol,64*4,0,64*4,0,64*4,0:button gosub "",*exit
-	pos 64*2,64*1:objimage bufcol,64*5,0,64*5,0,64*5,0:button gosub "",*exit
+	pos 64*0,64*0:objimage bufcol,64*0,0,64*0,0,64*0,0:button gosub "",*changeTheme:btn_col_white = stat
+	pos 64*1,64*0:objimage bufcol,64*1,0,64*1,0,64*1,0:button gosub "",*changeTheme:btn_col_black = stat
+	pos 64*2,64*0:objimage bufcol,64*2,0,64*2,0,64*2,0:button gosub "",*changeTheme:btn_col_red = stat
+	pos 64*0,64*1:objimage bufcol,64*3,0,64*3,0,64*3,0:button gosub "",*changeTheme:btn_col_blue = stat
+	pos 64*1,64*1:objimage bufcol,64*4,0,64*4,0,64*4,0:button gosub "",*changeTheme:btn_col_green = stat
+	pos 64*2,64*1:objimage bufcol,64*5,0,64*5,0,64*5,0:button gosub "",*changeTheme:btn_col_purple = stat
 	gsel 0
 
 	// タスクトレイの設定
@@ -107,7 +108,7 @@
 *eventActivePallet
 	if LOWORD(wparam) == 0 {
 		sel = ginfo_sel
-		;gsel wincol,-1
+		gsel wincol,-1
 		gsel sel
 	}
 	return
