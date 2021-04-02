@@ -1,7 +1,7 @@
 
 // メモのウィンドウを制御するためのモジュールです。
 
-#module modMemo fname,x,y,w,h,col,memo,wid,hMesbox,boxid,hBrush,btnid,btnid_pin,btnid_col,btnid_del
+#module modMemo fname,x,y,w,h,col,memo,wid,hMesbox,boxid,hBrush,btnid,btnid_pin,btnid_col,btnid_del,isPin,btnid_add
 #uselib "user32"
 #cfunc GetWindowLong "GetWindowLongA" int, int
 #func SetWindowLong "SetWindowLongA" int, int, int
@@ -26,13 +26,14 @@
 		notesel temp
 		notesave fname
 		noteunsel
+		isPin = 1
 	}else{
 		// ロード
 		fname = _fname
 		notesel notedata
 		noteload fname
 		noteget temp,0
-		split temp,",",x,y,w,h,col
+		split temp,",",x,y,w,h,col,isPin
 		repeat noteinfo(0)-1,1
 			if noteinfo(0)-1 < 0:break
 			noteget temp,cnt
@@ -49,6 +50,7 @@
 	w = int(w)
 	h = int(h)
 	col = col
+	isPin = int(isPin)
 	wid = ginfo_newid
 
 	// 最低値
@@ -60,6 +62,9 @@
 	// ウィンドウの生成
 	bgscr wid,ginfo(20),ginfo(21),2,x,y
 	width w,h
+
+	// ピンの設定
+	setPin thismod
 
 	// 色の設定
 
@@ -85,33 +90,14 @@
 	CreateSolidBrush get_WindowBkColor(thismod)
 	hBrush = stat
 
-	// ボタンイメージの生成（関数化する）
-	btnid = ginfo_newid
-	buffer btnid,32,32*3*4
-	gsel btnimage
-	repeat 4
-		y = cnt*96
-		color decRGB(0xCCCCCC):boxf 0,y+00,31,y+32
-		color decRGB(0xFFFFFF):boxf 0,y+32,31,y+64
-		color decRGB(0xAAAAAA):boxf 0,y+64,31,y+96
-	loop
-	gsel btnid
-	color decRGB(get_WindowColor(thismod))
-	boxf
-	gmode 7,32,32*3*4
-	pos 0,0
-	gcopy btnimage
+	// ボタンイメージの生成
+	createButtonImage thismod
 
 	// ボタンの設置
-	gsel wid
-	objsize 32,32
-	y = 32*3*0:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*0,0:button gosub "",*newWindow@
-	y = 32*3*1:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*1,0:button gosub "",*newWindow@:btnid_pin = stat
-	y = 32*3*2:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*2,0:button gosub "",*newWindow@:btnid_col = stat
-	y = 32*3*3:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos ginfo_winx-32,0:button gosub "",*delWindow@:btnid_del = stat
-	
+	setButton thismod
+
 	// 表示
-	gsel wid,1
+	gsel wid
 
 	oncmd gosub *ctrlEdit@, 0x133
 	
@@ -124,6 +110,44 @@
 	buffer wid,1,1,2
 	return
 
+// ボタンの設置、更新
+#modfunc setButton
+	gsel wid
+	objsize 32,32
+	if btnid_add != 0:clrobj btnid_add
+	if btnid_pin != 0:clrobj btnid_pin
+	if btnid_col != 0:clrobj btnid_col
+	if btnid_del != 0:clrobj btnid_del
+	y = 32*3*0:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*0,0:button gosub "",*newWindow@:btnid_add = stat
+	y = 32*3*1:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*1,0:button gosub "",*onClickWindowPin@:btnid_pin = stat
+	y = 32*3*2:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos 32*2,0:button gosub "",*newWindow@:btnid_col = stat
+	y = 32*3*3:objimage btnid,0,y+32*0,0,y+32*1,0,y+32*2:pos ginfo_winx-32,0:button gosub "",*delWindow@:btnid_del = stat
+	return
+
+// ピンのトグル
+#modfunc pinToggle
+	isPin = isPin == 0
+	setPin thismod
+	createButtonImage thismod
+	setButton thismod
+	onChange thismod
+	return
+
+#modfunc setPin
+	if isPin == 0:gsel wid,1
+	if isPin == 1:gsel wid,2
+	return
+
+// ボタンイメージの生成
+#modfunc createButtonImage
+	btnid = ginfo_newid
+	buffer btnid,32,32*3*4
+	color decRGB(get_WindowColor(thismod)):boxf
+	if isPin:color decRGB(0x444444):boxf 0,32*3*1,32,32*3*2-1
+	gmode 7,32,32*3*4
+	pos 0,0
+	gcopy btnimage
+	return
 
 // 情報が更新された（保存を行う）
 #modfunc onChange
@@ -134,7 +158,8 @@
 	options += str(ginfo_wy1) + ","
 	options += str(ginfo_winx) + ","
 	options += str(ginfo_winy) + ","
-	options += str("") + "\n"
+	options += str("") + ","
+	options += str(isPin) + "\n"
 	temp = options + str(memo)
 	notesel temp
 	notesave fname
@@ -170,6 +195,16 @@
 
 // モジュール内に書くとランタイムエラーとかになるので...
 goto *module_memo
+
+// ピンをクリック
+*onClickWindowPin
+	foreach window
+		if ginfo(2) == get_wid(window(cnt)) {
+			pinToggle window(cnt)
+			break
+		}
+	loop
+	return
 
 // ウィンドウの削除
 *delWindow

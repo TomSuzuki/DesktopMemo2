@@ -60,6 +60,12 @@
 			gcopy btnimage,32,y,32,32
 		loop
 	loop
+	repeat 4
+		y = cnt*96
+		color decRGB(0xCCCCCC):boxf 0,y+00,31,y+32
+		color decRGB(0xFFFFFF):boxf 0,y+32,31,y+64
+		color decRGB(0xAAAAAA):boxf 0,y+64,31,y+96
+	loop
 
 	// 初期化
 	dimtype window,vartype("struct")	// ウィンドウ
